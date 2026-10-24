@@ -60,6 +60,14 @@ app.put("/transactions/:id", async (req, res) => {
     return res.status(400).json({ message: "amount and type are required" });
   }
 
+  if (!Number.isInteger(Number(id))) {
+    return res.status(400).json({ message: "id must be an integer" });
+  }
+
+  if (Number.isNaN(Number(amount))) {
+    return res.status(400).json({ message: "amount must be a number" });
+  }
+
   try {
     const result = await pool.query(
       "UPDATE transactions SET amount = $1, type = $2, category_id = $3 WHERE id = $4 RETURNING *",
