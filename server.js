@@ -31,4 +31,25 @@ app.post("/transactions", async (req, res) => {
   }
 });
 
+app.delete("/transactions/:id", async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const result = await pool.query("DELETE FROM transactions WHERE id = $1", [
+      id,
+    ]);
+
+    if (result.rowCount === 0) {
+      return res.status(404).json({ message: "Transaction not found" });
+    }
+
+    res.status(204).send();
+  } catch (err) {
+    if (err.code === "22P02") {
+      return res.status(400).json({ message: "id must be a number" });
+    }
+    throw err;
+  }
+});
+
 app.listen(3000, () => console.log("API on http://localhost:3000"));
