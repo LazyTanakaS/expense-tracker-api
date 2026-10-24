@@ -1,6 +1,6 @@
 # expense-tracker-api
 
-A simple API for adding and viewing expense transactions. It saves data in PostgreSQL.
+A simple API for creating, viewing, updating, and deleting expense transactions. It saves data in PostgreSQL.
 
 ## Stack
 
@@ -47,7 +47,7 @@ A simple API for adding and viewing expense transactions. It saves data in Postg
    cp .env.example .env
    ```
 
-6. Start the API:
+6. Start the API. The `start` script loads `.env` with Node's `--env-file` option:
 
    ```sh
    npm start
@@ -61,6 +61,8 @@ The API runs at `http://localhost:3000`.
 | --- | --- | --- | --- |
 | GET | `/transactions` | Gets all transactions. | `200` success, `500` server error |
 | POST | `/transactions` | Adds a transaction. `amount` and `type` are required; `category_id` is optional. | `201` created, `400` missing data or unknown category, `500` server error |
+| PUT | `/transactions/:id` | Updates a transaction. `amount` and `type` are required; `category_id` is optional. | `200` success, `400` invalid input or unknown category, `404` transaction not found, `500` server error |
+| DELETE | `/transactions/:id` | Deletes a transaction. | `204` deleted, `400` invalid ID, `404` transaction not found, `500` server error |
 
 Example POST body:
 
@@ -112,22 +114,34 @@ Example response (`200 OK`):
 ]
 ```
 
+Delete a transaction:
+
+```sh
+curl -i -X DELETE http://localhost:3000/transactions/1
+```
+
+Example response (`204 No Content`):
+
+```text
+HTTP/1.1 204 No Content
+```
+
 ## Notes
 
 - The database stores `amount` as `NUMERIC(12, 2)`. The `pg` library returns it as a string to keep the exact value.
 - If a transaction uses a category ID that does not exist, the API returns `400 Bad Request`.
+- `amount` must not be `0`; zero is rejected with `amount and type are required`.
+- The API returns `400` with these messages: `id must be an integer` (PUT), `id must be a number` (DELETE), `amount must be a number` (PUT), `amount and type are required` (POST/PUT), or `This category does not exist` (POST/PUT).
 
 ## Status
 
 Implemented:
 
-- View transactions
-- Add transactions
+- View, add, update, and delete transactions
+- Validate IDs in PUT/DELETE and numeric amounts in PUT; POST checks only that `amount` and `type` are present
 - Database tables for transactions and categories
 
 Planned:
 
-- Update transactions (`PUT`)
-- Delete transactions (`DELETE`)
-- Request validation
+- Validate numeric amounts in POST
 - Connect a frontend
