@@ -52,4 +52,34 @@ app.delete("/transactions/:id", async (req, res) => {
   }
 });
 
+app.put("/transactions/:id", async (req, res) => {
+  const { id } = req.params;
+  const { amount, type, category_id } = req.body;
+
+  if (!amount || !type) {
+    return res.status(400).json({ message: "amount and type are required" });
+  }
+
+  try {
+    const result = await pool.query(
+      "UPDATE transactions SET amount = $1, type = $2, category_id = $3 WHERE id = $4 RETURNING *",
+      [amount, type, category_id, id],
+    );
+
+    if (result.rowCount === 0) {
+      return res.status(404).json({ message: "Transaction not found" });
+    }
+
+    res.json(result.rows[0]);
+  } catch (err) {
+    if (err.code === "22P02") {
+      return res.status(400).json({ message: "id must be a number" });
+    }
+    if (err.code === "23503") {
+      return res.status(400).json({ message: "This category does not exist" });
+    }
+    throw err;
+  }
+});
+
 app.listen(3000, () => console.log("API on http://localhost:3000"));
