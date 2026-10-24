@@ -9,3 +9,4 @@ CREATE TABLE transactions (
     type TEXT NOT NULL,
     category_id INTEGER REFERENCES categories(id)
 );
+
