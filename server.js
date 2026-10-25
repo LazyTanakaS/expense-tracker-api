@@ -4,8 +4,22 @@ import express from "express";
 const app = express();
 app.use(express.json());
 
+app.get("/categories", async (req, res) => {
+  const result = await pool.query("SELECT * FROM categories ORDER BY id");
+  res.json(result.rows);
+});
+
 app.get("/transactions", async (req, res) => {
-  const result = await pool.query("SELECT * FROM transactions ORDER BY id");
+  const result = await pool.query(`SELECT t.id,
+       t.amount,
+       t.type,
+       t.category_id,
+       t.description,
+       to_char(t.date, 'YYYY-MM-DD') AS date,
+       c.name AS category
+FROM transactions t
+LEFT JOIN categories c ON t.category_id = c.id
+ORDER BY t.id;`);
   res.json(result.rows);
 });
 
