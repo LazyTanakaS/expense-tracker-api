@@ -7,6 +7,9 @@ CREATE TABLE transactions (
     id SERIAL PRIMARY KEY,
     amount NUMERIC(12, 2) NOT NULL,
     type TEXT NOT NULL,
-    category_id INTEGER REFERENCES categories(id)
+    category_id INTEGER REFERENCES categories(id),
+    description TEXT NOT NULL DEFAULT '',
+    date DATE NOT NULL DEFAULT CURRENT_DATE
 );
+
 
