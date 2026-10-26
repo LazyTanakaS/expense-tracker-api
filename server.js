@@ -105,7 +105,7 @@ app.put("/transactions/:id", async (req, res) => {
     }
 
     if (err.code === "22007") {
-      return res.status(400).json({ message: "wrong date" });
+      return res.status(400).json({ message: "date is invalid" });
     }
     if (err.code === "23503") {
       return res.status(400).json({ message: "This category does not exist" });
