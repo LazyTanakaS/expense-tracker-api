@@ -24,7 +24,7 @@ ORDER BY t.id;`);
 });
 
 app.post("/transactions", async (req, res) => {
-  const { amount, type, category_id } = req.body;
+  const { amount, type, category_id, description = "", date } = req.body;
 
   if (!amount || !type) {
     return res.status(400).json({ message: "amount and type are required" });
@@ -32,14 +32,19 @@ app.post("/transactions", async (req, res) => {
 
   try {
     const result = await pool.query(
-      "INSERT INTO transactions (amount, type, category_id) VALUES ($1, $2, $3) RETURNING *",
-      [amount, type, category_id],
+      `INSERT INTO transactions (amount, type, category_id, description, date) VALUES ($1, $2, $3, $4, COALESCE($5, CURRENT_DATE)) 
+      RETURNING id, amount, type, category_id, description, to_char(date, 'YYYY-MM-DD') AS date`,
+      [amount, type, category_id, description, date],
     );
 
     res.status(201).json(result.rows[0]);
   } catch (err) {
     if (err.code === "23503") {
       return res.status(400).json({ message: "This category does not exist" });
+    }
+
+    if (err.code === "22007") {
+      return res.status(400).json({ message: "date is invalid" });
     }
     throw err;
   }
@@ -68,7 +73,7 @@ app.delete("/transactions/:id", async (req, res) => {
 
 app.put("/transactions/:id", async (req, res) => {
   const { id } = req.params;
-  const { amount, type, category_id } = req.body;
+  const { amount, type, category_id, description = "", date } = req.body;
 
   if (!amount || !type) {
     return res.status(400).json({ message: "amount and type are required" });
@@ -84,8 +89,9 @@ app.put("/transactions/:id", async (req, res) => {
 
   try {
     const result = await pool.query(
-      "UPDATE transactions SET amount = $1, type = $2, category_id = $3 WHERE id = $4 RETURNING *",
-      [amount, type, category_id, id],
+      `UPDATE transactions SET amount = $1, type = $2, category_id = $3, description = $5, date = COALESCE($6, CURRENT_DATE) WHERE id = $4 
+        RETURNING id, amount, type, category_id, description, to_char(date, 'YYYY-MM-DD') AS date`,
+      [amount, type, category_id, id, description, date],
     );
 
     if (result.rowCount === 0) {
@@ -96,6 +102,10 @@ app.put("/transactions/:id", async (req, res) => {
   } catch (err) {
     if (err.code === "22P02") {
       return res.status(400).json({ message: "id must be a number" });
+    }
+
+    if (err.code === "22007") {
+      return res.status(400).json({ message: "wrong date" });
     }
     if (err.code === "23503") {
       return res.status(400).json({ message: "This category does not exist" });
