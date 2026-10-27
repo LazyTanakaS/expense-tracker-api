@@ -50,6 +50,32 @@ app.post("/transactions", async (req, res) => {
   }
 });
 
+app.post("/categories", async (req, res) => {
+  const { name, type } = req.body;
+
+  if (!name || !type) {
+    return res.status(400).json({ message: "name and type are required" });
+  }
+
+  try {
+    const results = await pool.query(
+      "INSERT INTO categories (name, type) VALUES ($1, $2) RETURNING *",
+      [name, type],
+    );
+    res.status(201).json(results.rows[0]);
+  } catch (err) {
+    if (err.code === "23505") {
+      return res.status(409).json({ message: "Category already exists" });
+    }
+    if (err.code === "23514") {
+      return res
+        .status(400)
+        .json({ message: "type must be income or expense" });
+    }
+    throw err;
+  }
+});
+
 app.delete("/transactions/:id", async (req, res) => {
   const { id } = req.params;
 

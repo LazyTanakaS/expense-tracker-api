@@ -1,6 +1,7 @@
 CREATE TABLE categories (
     id SERIAL PRIMARY KEY, 
-    name TEXT NOT NULL
+    name TEXT NOT NULL UNIQUE,
+    type TEXT NOT NULL CHECK (type IN ('income', 'expense'))
 );
 
 CREATE TABLE transactions (
@@ -12,4 +13,14 @@ CREATE TABLE transactions (
     date DATE NOT NULL DEFAULT CURRENT_DATE
 );
 
-
+INSERT INTO categories (name, type) VALUES 
+    ('Bills', 'expense'),
+    ('Food', 'expense'),
+    ('Salary', 'income'),
+    ('Shopping', 'expense'),
+    ('Taxi', 'expense'),
+    ('Fuel', 'expense'),
+    ('Entertainment', 'expense'),
+    ('Subscriptions', 'expense'),
+    ('Side Job', 'income'),
+    ('Debt repayment', 'income');
