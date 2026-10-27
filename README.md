@@ -41,6 +41,8 @@ A simple API for creating, viewing, updating, and deleting expense transactions.
    psql -d expense_tracker -f sql/schema.sql
    ```
 
+   The file also creates ten starter categories.
+
 5. Copy the example settings into `.env`. Change `DATABASE_URL` if needed:
 
    ```sh
@@ -60,9 +62,11 @@ The API runs at `http://localhost:3000`.
 | Method | Path | Description | Response statuses |
 | --- | --- | --- | --- |
 | GET | `/transactions` | Gets all transactions. | `200` success, `500` server error |
-| POST | `/transactions` | Adds a transaction. `amount` and `type` are required; `category_id` is optional. | `201` created, `400` missing data or unknown category, `500` server error |
-| PUT | `/transactions/:id` | Updates a transaction. `amount` and `type` are required; `category_id` is optional. | `200` success, `400` invalid input or unknown category, `404` transaction not found, `500` server error |
+| POST | `/transactions` | Adds a transaction. `amount` and `type` are required; `category_id` and `description` are optional; `date` is optional and defaults to the current date. | `201` created, `400` missing data, invalid date, or unknown category, `500` server error |
+| PUT | `/transactions/:id` | Updates a transaction. `amount` and `type` are required; `category_id` and `description` are optional; `date` is optional and defaults to the current date. | `200` success, `400` invalid input, invalid date, or unknown category, `404` transaction not found, `500` server error |
 | DELETE | `/transactions/:id` | Deletes a transaction. | `204` deleted, `400` invalid ID, `404` transaction not found, `500` server error |
+| GET | `/categories` | Gets all categories. | `200` success, `500` server error |
+| POST | `/categories` | Adds a category. `name` and `type` are required; `type` must be `income` or `expense`. | `201` created, `400` missing data or invalid type, `409` category already exists, `500` server error |
 
 Example POST body:
 
@@ -70,18 +74,20 @@ Example POST body:
 {
   "amount": "12.50",
   "type": "expense",
-  "category_id": null
+  "category_id": 2,
+  "description": "Lunch",
+  "date": "2026-10-27"
 }
 ```
 
-## Example
+## Examples
 
 Add a transaction:
 
 ```sh
 curl -i -X POST http://localhost:3000/transactions \
   -H 'Content-Type: application/json' \
-  -d '{"amount":"12.50","type":"expense"}'
+  -d '{"amount":"12.50","type":"expense","category_id":2,"description":"Lunch","date":"2026-10-27"}'
 ```
 
 Example response (`201 Created`):
@@ -91,7 +97,9 @@ Example response (`201 Created`):
   "id": 1,
   "amount": "12.50",
   "type": "expense",
-  "category_id": null
+  "category_id": 2,
+  "description": "Lunch",
+  "date": "2026-10-27"
 }
 ```
 
@@ -109,7 +117,10 @@ Example response (`200 OK`):
     "id": 1,
     "amount": "12.50",
     "type": "expense",
-    "category_id": null
+    "category_id": 2,
+    "description": "Lunch",
+    "date": "2026-10-27",
+    "category": "Food"
   }
 ]
 ```
@@ -131,7 +142,8 @@ HTTP/1.1 204 No Content
 - The database stores `amount` as `NUMERIC(12, 2)`. The `pg` library returns it as a string to keep the exact value.
 - If a transaction uses a category ID that does not exist, the API returns `400 Bad Request`.
 - `amount` must not be `0`; zero is rejected with `amount and type are required`.
-- The API returns `400` with these messages: `id must be an integer` (PUT), `id must be a number` (DELETE), `amount must be a number` (PUT), `amount and type are required` (POST/PUT), or `This category does not exist` (POST/PUT).
+- The API returns `400` with these messages: `id must be an integer` (PUT), `id must be a number` (DELETE), `amount must be a number` (PUT), `amount and type are required` (POST/PUT), `This category does not exist` (POST/PUT), `date is invalid` (POST/PUT), `name and type are required` (POST `/categories`), or `type must be income or expense` (POST `/categories`).
+- Creating a category with a name that already exists returns `409 Conflict` with `Category already exists`.
 
 ## Status
 
@@ -139,7 +151,7 @@ Implemented:
 
 - View, add, update, and delete transactions
 - Validate IDs in PUT/DELETE and numeric amounts in PUT; POST checks only that `amount` and `type` are present
-- Database tables for transactions and categories
+- PostgreSQL schema for transactions and categories, including ten starter categories
 
 Planned:
 
