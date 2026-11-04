@@ -1,7 +1,14 @@
 import { pool } from "./db.js";
-import express from "express";
+import express, { type ErrorRequestHandler } from "express";
+import pg from "pg";
+import type { Transaction, Category } from "./types.js";
 
-function validateTransaction({ amount, type }) {
+type TransactionInput = {
+  amount?: number | string;
+  type?: string;
+};
+
+function validateTransaction({ amount, type }: TransactionInput) {
   if (!amount || !type) return "amount and type are required";
   if (Number.isNaN(Number(amount))) return "amount must be a number";
   return null;
@@ -11,12 +18,14 @@ const app = express();
 app.use(express.json());
 
 app.get("/categories", async (req, res) => {
-  const result = await pool.query("SELECT * FROM categories ORDER BY id");
+  const result = await pool.query<Category>(
+    "SELECT * FROM categories ORDER BY id",
+  );
   res.json(result.rows);
 });
 
 app.get("/transactions", async (req, res) => {
-  const result = await pool.query(`SELECT t.id,
+  const result = await pool.query<Transaction>(`SELECT t.id,
        t.amount,
        t.type,
        t.category_id,
@@ -44,11 +53,11 @@ app.post("/transactions", async (req, res) => {
 
     res.status(201).json(result.rows[0]);
   } catch (err) {
-    if (err.code === "23503") {
+    if (err instanceof pg.DatabaseError && err.code === "23503") {
       return res.status(400).json({ message: "This category does not exist" });
     }
 
-    if (err.code === "22007") {
+    if (err instanceof pg.DatabaseError && err.code === "22007") {
       return res.status(400).json({ message: "date is invalid" });
     }
     throw err;
@@ -68,10 +77,10 @@ app.post("/categories", async (req, res) => {
     );
     res.status(201).json(results.rows[0]);
   } catch (err) {
-    if (err.code === "23505") {
+    if (err instanceof pg.DatabaseError && err.code === "23505") {
       return res.status(409).json({ message: "Category already exists" });
     }
-    if (err.code === "23514") {
+    if (err instanceof pg.DatabaseError && err.code === "23514") {
       return res
         .status(400)
         .json({ message: "type must be income or expense" });
@@ -94,7 +103,7 @@ app.delete("/transactions/:id", async (req, res) => {
 
     res.status(204).send();
   } catch (err) {
-    if (err.code === "22P02") {
+    if (err instanceof pg.DatabaseError && err.code === "22P02") {
       return res.status(400).json({ message: "id must be a number" });
     }
     throw err;
@@ -125,24 +134,26 @@ app.put("/transactions/:id", async (req, res) => {
 
     res.json(result.rows[0]);
   } catch (err) {
-    if (err.code === "22P02") {
+    if (err instanceof pg.DatabaseError && err.code === "22P02") {
       return res.status(400).json({ message: "id must be a number" });
     }
 
-    if (err.code === "22007") {
+    if (err instanceof pg.DatabaseError && err.code === "22007") {
       return res.status(400).json({ message: "date is invalid" });
     }
-    if (err.code === "23503") {
+    if (err instanceof pg.DatabaseError && err.code === "23503") {
       return res.status(400).json({ message: "This category does not exist" });
     }
     throw err;
   }
 });
 
-app.use((err, req, res, next) => {
+const errorHandler: ErrorRequestHandler = (err, req, res, next) => {
   console.error(req.method, req.url, err);
   res.status(500).json({ message: "Internal server error" });
-});
+};
+
+app.use(errorHandler);
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`API on http://localhost:${PORT}`));
