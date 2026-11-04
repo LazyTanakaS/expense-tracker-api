@@ -65,9 +65,7 @@ Requires Docker Desktop.
 docker compose up --build
 ```
 
-The API runs at `http://localhost:3000`. The database is created from `sql/schema.sql` on first start. To reset it:
-
-Inside Docker Compose, use `db` as the database host instead of `localhost`; `localhost` refers to the API container itself.
+The API runs at `http://localhost:3000`. The database is created from `sql/schema.sql` on first start. In Docker Compose, use `db` as the database host because `localhost` refers to the API container itself. To reset the database:
 
 ```sh
 docker compose down -v
@@ -158,18 +156,27 @@ HTTP/1.1 204 No Content
 - The database stores `amount` as `NUMERIC(12, 2)`. The `pg` library returns it as a string to keep the exact value.
 - If a transaction uses a category ID that does not exist, the API returns `400 Bad Request`.
 - `amount` must not be `0`; zero is rejected with `amount and type are required`.
-- The API returns `400` with these messages: `id must be an integer` (PUT), `id must be a number` (DELETE), `amount must be a number` (PUT), `amount and type are required` (POST/PUT), `This category does not exist` (POST/PUT), `date is invalid` (POST/PUT), `name and type are required` (POST `/categories`), or `type must be income or expense` (POST `/categories`).
+- The API returns `400` with these messages: `id must be an integer` (PUT), `id must be a number` (DELETE), `amount must be a number` (POST/PUT), `amount and type are required` (POST/PUT), `This category does not exist` (POST/PUT), `date is invalid` (POST/PUT), `name and type are required` (POST `/categories`), or `type must be income or expense` (POST `/categories`).
 - Creating a category with a name that already exists returns `409 Conflict` with `Category already exists`.
+- Unexpected errors return `500` with a JSON body; details go to the server log.
+
+## Project structure
+
+- `server.js` — API routes and validation
+- `db.js` — PostgreSQL connection
+- `sql/schema.sql` — database schema and starter categories
+- `Dockerfile` — API container image
+- `compose.yaml` — API and database services
 
 ## Status
 
 Implemented:
 
 - View, add, update, and delete transactions
-- Validate IDs in PUT/DELETE and numeric amounts in PUT; POST checks only that `amount` and `type` are present
+- Validate IDs in PUT/DELETE and numeric amounts in POST/PUT
 - PostgreSQL schema for transactions and categories, including ten starter categories
 
 Planned:
 
-- Validate numeric amounts in POST
 - Connect a frontend
+- Automated tests and CI
