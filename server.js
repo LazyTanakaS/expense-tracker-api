@@ -1,6 +1,12 @@
 import { pool } from "./db.js";
 import express from "express";
 
+function validateTransaction({ amount, type }) {
+  if (!amount || !type) return "amount and type are required";
+  if (Number.isNaN(Number(amount))) return "amount must be a number";
+  return null;
+}
+
 const app = express();
 app.use(express.json());
 
@@ -25,10 +31,9 @@ ORDER BY t.id;`);
 
 app.post("/transactions", async (req, res) => {
   const { amount, type, category_id, description = "", date } = req.body;
+  const error = validateTransaction(req.body);
 
-  if (!amount || !type) {
-    return res.status(400).json({ message: "amount and type are required" });
-  }
+  if (error) return res.status(400).json({ message: error });
 
   try {
     const result = await pool.query(
@@ -52,7 +57,6 @@ app.post("/transactions", async (req, res) => {
 
 app.post("/categories", async (req, res) => {
   const { name, type } = req.body;
-
   if (!name || !type) {
     return res.status(400).json({ message: "name and type are required" });
   }
@@ -100,17 +104,12 @@ app.delete("/transactions/:id", async (req, res) => {
 app.put("/transactions/:id", async (req, res) => {
   const { id } = req.params;
   const { amount, type, category_id, description = "", date } = req.body;
+  const error = validateTransaction(req.body);
 
-  if (!amount || !type) {
-    return res.status(400).json({ message: "amount and type are required" });
-  }
+  if (error) return res.status(400).json({ message: error });
 
   if (!Number.isInteger(Number(id))) {
     return res.status(400).json({ message: "id must be an integer" });
-  }
-
-  if (Number.isNaN(Number(amount))) {
-    return res.status(400).json({ message: "amount must be a number" });
   }
 
   try {
@@ -140,4 +139,10 @@ app.put("/transactions/:id", async (req, res) => {
   }
 });
 
-app.listen(3000, () => console.log("API on http://localhost:3000"));
+app.use((err, req, res, next) => {
+  console.error(req.method, req.url, err);
+  res.status(500).json({ message: "Internal server error" });
+});
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`API on http://localhost:${PORT}`));
