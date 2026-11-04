@@ -57,6 +57,22 @@ A simple API for creating, viewing, updating, and deleting expense transactions.
 
 The API runs at `http://localhost:3000`.
 
+## Run with Docker
+
+Requires Docker Desktop.
+
+```sh
+docker compose up --build
+```
+
+The API runs at `http://localhost:3000`. The database is created from `sql/schema.sql` on first start. To reset it:
+
+Inside Docker Compose, use `db` as the database host instead of `localhost`; `localhost` refers to the API container itself.
+
+```sh
+docker compose down -v
+```
+
 ## API
 
 | Method | Path | Description | Response statuses |
