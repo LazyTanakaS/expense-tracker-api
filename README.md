@@ -5,6 +5,7 @@ A simple API for creating, viewing, updating, and deleting expense transactions.
 ## Stack
 
 - Node.js
+- TypeScript
 - Express 5
 - PostgreSQL 17
 - `pg` to connect to PostgreSQL
@@ -49,10 +50,16 @@ A simple API for creating, viewing, updating, and deleting expense transactions.
    cp .env.example .env
    ```
 
-6. Start the API. The `start` script loads `.env` with Node's `--env-file` option:
+6. Start the API in development:
 
    ```sh
-   npm start
+   npm run dev
+   ```
+
+   For production, build and start the API:
+
+   ```sh
+   npm run build && npm start
    ```
 
 The API runs at `http://localhost:3000`.
