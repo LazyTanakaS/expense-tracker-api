@@ -13,3 +13,8 @@ export type Category = {
   name: string;
   type: "income" | "expense";
 };
+
+export type TransactionInput = {
+  amount?: number | string;
+  type?: string;
+};

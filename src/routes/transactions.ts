@@ -1,30 +1,12 @@
-import { pool } from "./db.js";
-import express, { type ErrorRequestHandler } from "express";
+import { Router } from "express";
 import pg from "pg";
-import type { Transaction, Category } from "./types.js";
+import { pool } from "../db.js";
+import type { Transaction } from "../types.js";
+import { validateTransaction } from "../validation.js";
 
-type TransactionInput = {
-  amount?: number | string;
-  type?: string;
-};
+export const transactionsRouter = Router();
 
-function validateTransaction({ amount, type }: TransactionInput) {
-  if (!amount || !type) return "amount and type are required";
-  if (Number.isNaN(Number(amount))) return "amount must be a number";
-  return null;
-}
-
-const app = express();
-app.use(express.json());
-
-app.get("/categories", async (req, res) => {
-  const result = await pool.query<Category>(
-    "SELECT * FROM categories ORDER BY id",
-  );
-  res.json(result.rows);
-});
-
-app.get("/transactions", async (req, res) => {
+transactionsRouter.get("/", async (req, res) => {
   const result = await pool.query<Transaction>(`SELECT t.id,
        t.amount,
        t.type,
@@ -38,7 +20,7 @@ ORDER BY t.id;`);
   res.json(result.rows);
 });
 
-app.post("/transactions", async (req, res) => {
+transactionsRouter.post("/", async (req, res) => {
   const { amount, type, category_id, description = "", date } = req.body;
   const error = validateTransaction(req.body);
 
@@ -64,32 +46,7 @@ app.post("/transactions", async (req, res) => {
   }
 });
 
-app.post("/categories", async (req, res) => {
-  const { name, type } = req.body;
-  if (!name || !type) {
-    return res.status(400).json({ message: "name and type are required" });
-  }
-
-  try {
-    const results = await pool.query(
-      "INSERT INTO categories (name, type) VALUES ($1, $2) RETURNING *",
-      [name, type],
-    );
-    res.status(201).json(results.rows[0]);
-  } catch (err) {
-    if (err instanceof pg.DatabaseError && err.code === "23505") {
-      return res.status(409).json({ message: "Category already exists" });
-    }
-    if (err instanceof pg.DatabaseError && err.code === "23514") {
-      return res
-        .status(400)
-        .json({ message: "type must be income or expense" });
-    }
-    throw err;
-  }
-});
-
-app.delete("/transactions/:id", async (req, res) => {
+transactionsRouter.delete("/:id", async (req, res) => {
   const { id } = req.params;
 
   try {
@@ -110,7 +67,7 @@ app.delete("/transactions/:id", async (req, res) => {
   }
 });
 
-app.put("/transactions/:id", async (req, res) => {
+transactionsRouter.put("/:id", async (req, res) => {
   const { id } = req.params;
   const { amount, type, category_id, description = "", date } = req.body;
   const error = validateTransaction(req.body);
@@ -147,13 +104,3 @@ app.put("/transactions/:id", async (req, res) => {
     throw err;
   }
 });
-
-const errorHandler: ErrorRequestHandler = (err, req, res, next) => {
-  console.error(req.method, req.url, err);
-  res.status(500).json({ message: "Internal server error" });
-};
-
-app.use(errorHandler);
-
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`API on http://localhost:${PORT}`));

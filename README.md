@@ -169,11 +169,13 @@ HTTP/1.1 204 No Content
 
 ## Project structure
 
-- `server.js` — API routes and validation
-- `db.js` — PostgreSQL connection
+- `src/server.ts` — starts the API
+- `src/app.ts` — Express app, middleware, routes, and error handler
+- `src/db.ts` — PostgreSQL connection
+- `src/types.ts` and `src/validation.ts` — shared types and validation
+- `src/routes/` — transaction and category routes
 - `sql/schema.sql` — database schema and starter categories
-- `Dockerfile` — API container image
-- `compose.yaml` — API and database services
+- `Dockerfile` and `compose.yaml` — API and database containers
 
 ## Status
 
