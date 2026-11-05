@@ -1,5 +1,7 @@
 # expense-tracker-api
 
+![CI](https://github.com/LazyTanakaS/expense-tracker-api/actions/workflows/ci.yml/badge.svg)
+
 A simple API for creating, viewing, updating, and deleting expense transactions. It saves data in PostgreSQL.
 
 ## Stack
@@ -9,10 +11,11 @@ A simple API for creating, viewing, updating, and deleting expense transactions.
 - Express 5
 - PostgreSQL 17
 - `pg` to connect to PostgreSQL
+- Vitest and Supertest for tests
 
 ## Requirements
 
-- Node.js 20.6 or newer (needed for the `--env-file` option used to start the app)
+- Node.js 24
 - PostgreSQL 17
 
 ## Setup
@@ -77,6 +80,23 @@ The API runs at `http://localhost:3000`. The database is created from `sql/schem
 ```sh
 docker compose down -v
 ```
+
+## Testing
+
+Integration tests use Vitest and Supertest with a real PostgreSQL database. Create a separate test database and apply the schema:
+
+```sh
+createdb expense_tracker_test
+psql -d expense_tracker_test -f sql/schema.sql
+```
+
+Run the tests with:
+
+```sh
+npm test
+```
+
+Tests clear tables, so `DATABASE_URL` must point to `expense_tracker_test`, not your working database. If `DATABASE_URL` is set in your shell, the tests use it instead of the test database default. GitHub Actions runs the same build and tests with PostgreSQL.
 
 ## API
 
@@ -174,8 +194,11 @@ HTTP/1.1 204 No Content
 - `src/db.ts` — PostgreSQL connection
 - `src/types.ts` and `src/validation.ts` — shared types and validation
 - `src/routes/` — transaction and category routes
+- `tests/` — integration tests
+- `vitest.config.ts` — test configuration and default test database
 - `sql/schema.sql` — database schema and starter categories
 - `Dockerfile` and `compose.yaml` — API and database containers
+- `.github/workflows/ci.yml` — GitHub Actions CI
 
 ## Status
 
@@ -184,8 +207,8 @@ Implemented:
 - View, add, update, and delete transactions
 - Validate IDs in PUT/DELETE and numeric amounts in POST/PUT
 - PostgreSQL schema for transactions and categories, including ten starter categories
+- Integration tests (Vitest, Supertest) and CI on GitHub Actions
 
 Planned:
 
 - Connect a frontend
-- Automated tests and CI
